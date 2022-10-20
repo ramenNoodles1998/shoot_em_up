@@ -1,0 +1,2 @@
+1. create main page.
+2. let 2 people join a room.
