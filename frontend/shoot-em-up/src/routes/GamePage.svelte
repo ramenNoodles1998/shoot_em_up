@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     let conn;
+    let opponentJoined = false;
     let health = 500;
     let opponentHealth = 500;
     let healthpx = '500px';
@@ -8,6 +9,7 @@
     let display = '';
     let firstMessage = true;
     let id;
+    const code = Math.floor(Math.random() * 100000);
 
     const onAttack = () => {
         if (!conn) {
@@ -17,8 +19,18 @@
         return false;
     }
 
-    onMount(() => {
-        conn = new WebSocket('ws://127.0.0.1:8080/ws');
+    onMount(async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const myParam = urlParams.get('code')
+        if(myParam) {
+            conn = new WebSocket(`ws://127.0.0.1:8080/join-hub?code=${myParam}`);
+            conn.onopen = function () {
+                conn.send('opponent joined');
+            }
+        } else {
+            conn = new WebSocket(`ws://127.0.0.1:8080/create-hub?code=${code}`);
+            display = 'ROOM CODE: ' + code;
+        } 
         conn.onclose = function (evt) {
             health = 0;
         };
@@ -28,9 +40,10 @@
             if(firstMessage) {
                 firstMessage = false;
                 id = eventMessages[0];
+            } else if(eventMessages[0] === 'opponent joined') {
+                opponentJoined = true;
             } else {
                 for (let message of eventMessages) {
-                    console.log(message)
                     let data = JSON.parse(message);
                     if(data.id === id) continue;
                     if(data.damage) {
@@ -44,7 +57,6 @@
                     }
 
                     if(data.hit) {
-                        console.log(opponentHealth);
                         if(opponentHealth > 0) {
                             opponentHealth -= parseInt(data.hit);
                         } else {
@@ -65,7 +77,9 @@
             {display}
         </h1>
         <p class="health" style:height={healthpx}>Your HP</p>
-        <p class="opponent" style:height={opponentHealthpx}>Enemy HP</p>
+        {#if opponentJoined}
+            <p class="opponent" style:height={opponentHealthpx}>Enemy HP</p>
+        {/if}
     </div>
     <div id="buttons">
         <button on:click={onAttack}>Attack Enemy</button>

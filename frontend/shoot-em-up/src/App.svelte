@@ -1,16 +1,24 @@
 <script>
   import { Router, Route, Link } from 'svelte-routing';
-  import CreateGamePage from './routes/CreateGamePage.svelte';
+  import GamePage from './routes/GamePage.svelte';
 
   export let url = '';
+  let code = 0
+
+  const goToGamePage = () => {
+    window.location.href = `http://127.0.0.1:5173/create-game?code=${code}`;
+  };
 </script>
 
 <Router url="{url}">
   <div class="home">
+    <h1 class="title">SHOOT EM UP</h1>
     <nav class="buttons">
         <Link to="/create-game">Create Game</Link> 
     </nav>
-    <Route path="create-game" component="{CreateGamePage}"></Route> 
+    <input placeholder="Enter code to join room" bind:value={code}/>
+    <button style:background-color="blue" on:click={goToGamePage}>join</button>
+    <Route path="create-game" component="{GamePage}"></Route> 
   </div>
 </Router>
 

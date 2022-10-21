@@ -38,7 +38,6 @@ func newHub() *Hub {
 
 func (h *Hub) run() {
 	for {
-		// fmt.Print(h.clients)
 		select {
 		case client := <-h.register:
 			h.clients[client] = ClientStruct {
@@ -54,8 +53,6 @@ func (h *Hub) run() {
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
-				// myString := string(h.broadcast[:])
-				// fmt.Println(myString)
 				select {
 				case client.send <- message:
 				default:
