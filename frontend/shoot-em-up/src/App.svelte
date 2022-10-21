@@ -7,9 +7,6 @@
 
 <Router url="{url}">
   <div class="home">
-    <div class="title">
-        <h2>SHOOT EM UP!!!</h2>
-    </div>
     <nav class="buttons">
         <Link to="/create-game">Create Game</Link> 
     </nav>

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"fmt"
 
 	"github.com/gorilla/websocket"
 )
@@ -96,9 +97,12 @@ func (c *Client) writePump() {
 				return
 			}
 			w.Write(message)
+			myString := string(message[:])
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
+			fmt.Print("write pump")
+			fmt.Print(myString)
 			for i := 0; i < n; i++ {
 				w.Write(newline)
 				w.Write(<-c.send)

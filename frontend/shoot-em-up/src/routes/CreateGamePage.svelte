@@ -1,48 +1,74 @@
 <script>
     import { onMount } from 'svelte';
     let conn;
-    let msg;
-    let messages = ['hello'];
+    let health = 500;
+    let opponentHealth = 500;
+    let healthpx = '500px';
+    let opponentHealthpx = '500px';
+    let display = '';
+    let firstMessage = true;
+    let id;
 
-    const onSubmit = () => {
+    const onAttack = () => {
         if (!conn) {
             return false;
         }
-        if (!msg) {
-            return false;
-        }
-        conn.send(msg);
-        msg = '';
+        conn.send(JSON.stringify({id, damage: 100}));
         return false;
     }
 
     onMount(() => {
         conn = new WebSocket('ws://127.0.0.1:8080/ws');
         conn.onclose = function (evt) {
-            messages.push('Connection closed')
+            health = 0;
         };
+
         conn.onmessage = function (evt) {
             let eventMessages = evt.data.split('\n');
-            for (let message of eventMessages) {
-                messages.push(message)
+            if(firstMessage) {
+                firstMessage = false;
+                id = eventMessages[0];
+            } else {
+                for (let message of eventMessages) {
+                    console.log(message)
+                    let data = JSON.parse(message);
+                    if(data.id === id) continue;
+                    if(data.damage) {
+                        if(health > 0) {
+                            health -= parseInt(data.damage);
+                            conn.send(JSON.stringify({id, hit: data.damage}));
+                        } else {
+                            display = 'You Dead';
+                            conn.send(JSON.stringify({id, hit: data.damage}));
+                        }
+                    }
+
+                    if(data.hit) {
+                        console.log(opponentHealth);
+                        if(opponentHealth > 0) {
+                            opponentHealth -= parseInt(data.hit);
+                        } else {
+                            display = 'You killed the enemy';
+                        }
+                    }
+                }
+                healthpx = health + 'px';
+                opponentHealthpx = opponentHealth + 'px';
             }
-            console.log(messages)
         };
     });
 </script>
 
 <div>
     <div id="log">
-        <ul>
-            <li>list</li>
-            {#each messages as message}
-                <li>{message}</li>
-            {/each} 
-        </ul>
+        <h1 style:color="red">
+            {display}
+        </h1>
+        <p class="health" style:height={healthpx}>Your HP</p>
+        <p class="opponent" style:height={opponentHealthpx}>Enemy HP</p>
     </div>
-    <div id="form">
-        <button on:click={onSubmit}>Send</button>
-        <input bind:value={msg} on:submit={onSubmit} type="text" size="64"/>
+    <div id="buttons">
+        <button on:click={onAttack}>Attack Enemy</button>
     </div>
 </div>
 
@@ -58,16 +84,43 @@
     right: 0.5em;
     bottom: 3em;
     overflow: auto;
+    border-radius: .5em;
 }
 
-#form {
-    padding: 0 0.5em 0 0.5em;
+.health {
+    color: white;
+    background-color: rgb(141, 67, 67);
+    position: absolute;
+    top: auto;
+    left: 2em;
+    right: auto;
+    bottom: 2em;
+    padding: 2em;
+}
+
+.opponent {
+    color: white;
+    background-color: rgb(141, 67, 67);
+    position: absolute;
+    top: auto;
+    left: auto;
+    right: 2em;
+    bottom: 2em;
+    padding: 2em;
+}
+#buttons {
+    display: flex;
+    justify-content: flex-start;
+    padding: 0.5em;
     margin: 0;
+    background-color: rgb(141, 67, 67);
     position: absolute;
     bottom: 1em;
-    left: 0px;
-    width: 100%;
+    left: 0.5em;
+    right: .5em;
     overflow: hidden;
+    border-bottom-right-radius: .5em;
+    border-bottom-left-radius: .5em;
 }
 
 </style>

@@ -1,10 +1,15 @@
 package main
 
+import (
+	"strconv"
+)
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
+var id = 1
+
 type Hub struct {
 	// Registered clients.
-	clients map[*Client]bool
+	clients map[*Client]ClientStruct
 
 	// Inbound messages from the clients.
 	broadcast chan []byte
@@ -16,20 +21,32 @@ type Hub struct {
 	unregister chan *Client
 }
 
+type ClientStruct struct {
+	connected bool
+
+	id int
+}
+
 func newHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		clients:    make(map[*Client]bool),
+		clients:    make(map[*Client]ClientStruct),
 	}
 }
 
 func (h *Hub) run() {
 	for {
+		// fmt.Print(h.clients)
 		select {
 		case client := <-h.register:
-			h.clients[client] = true
+			h.clients[client] = ClientStruct {
+				connected: true,
+				id: id,
+			} 
+			client.send <- []byte(strconv.Itoa(id)) 
+			id++
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
@@ -37,6 +54,8 @@ func (h *Hub) run() {
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
+				// myString := string(h.broadcast[:])
+				// fmt.Println(myString)
 				select {
 				case client.send <- message:
 				default:
